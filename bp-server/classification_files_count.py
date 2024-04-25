@@ -73,7 +73,7 @@ classes = {
 
 def extract_gps_from_image(image_path):
     """
-    Extracts GPS coordinates (latitude and longitude) from the EXIF metadata of an image file.
+    Extracts GPS coordinates (latitude and longitude) and timestamp from the EXIF metadata of an image file.
     """
     try:
         im = Image.open(image_path)
@@ -87,8 +87,9 @@ def extract_gps_from_image(image_path):
         
         latitude = float(latitude_str)
         longitude = float(longitude_str)
+        timestamp = exif_dict['Exif'][piexif.ExifIFD.DateTimeOriginal].decode('utf-8')
         
-        return latitude, longitude
+        return latitude, longitude, timestamp
     except Exception as e:
         print(f"Error extracting GPS coordinates: {e}")
         return 0, 0
@@ -135,12 +136,11 @@ def check_ordered_files_and_save_to_database(folder_path, collection):
             missing_file_number = current_number
             original_file = f"{current_file.split('_')[0]}_{current_file.split('_')[1]}_{current_file.split('_')[2]}_{missing_file_number}.jpg"
             original_path = os.path.join(folder_path, original_file)
-            lat, lon = extract_gps_from_image(original_path)
+            lat, lon, timestamp = extract_gps_from_image(original_path)
             sign, pred2 = classify(original_path)
 
-            current_time_seconds = time.time()
-            current_time_struct = time.localtime(current_time_seconds)
-            formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", current_time_struct)
+            timestamp_struct = time.strptime(timestamp, "%Y:%m:%d %H:%M:%S")
+            formatted_time = time.strftime("%d.%m.%Y %H:%M:%S", timestamp_struct)
 
             if pred2 < 12:
                 continue
